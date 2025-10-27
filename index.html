@@ -865,680 +865,755 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.7/dist/sweetalert2.all.min.js"></script>
     <script>
-        // ================= CONFIGURACIÓN =================
-        const CONFIG = {
-            API_BASE_URL: 'https://nabi-back.onrender.com/api',
-            DEFAULT_HORARIOS: {
-                lunes: { activo: true, inicio: '09:00', fin: '12:00' },
-                martes: { activo: true, inicio: '12:00', fin: '13:00' },
-                miércoles: { activo: true, inicio: '09:00', fin: '12:00' },
-                jueves: { activo: true, inicio: '12:00', fin: '13:00' },
-                viernes: { activo: true, inicio: '13:00', fin: '14:00' }
-            },
-            DEFAULT_PRECIOS: {
-                cantidad_15: 20,
-                cantidad_20: 25, 
-                cantidad_25: 30,
-                precio_extra: 5,
-                paquetes: {
-                    Chocolate: 15,
-                    Fitness: 10,
-                    Fresita: 10,
-                    Lechera: 25,
-                    Gansito: 15
-                }
-            },
-            DEFAULT_PUNTOS: [
-                'Puerta de EMA 1', 'Puerta de EMA 2', 'Puerta de EMA 3', 'Puerta de EMA 4', 'Puerta de EMA 5',
-                'Puerta de EMA 6', 'Puerta de EMA 7', 'Puerta de EMA 8', 'Puerta de EMA 9', 'Puerta de EMA 10',
-                'Cafetería', 'Oxxo', 'Lobo'
-            ]
+      // ================= CONFIGURACIÓN =================
+const CONFIG = {
+    API_BASE_URL: 'https://nabi-back.onrender.com/api',
+    DEFAULT_HORARIOS: {
+        lunes: { activo: true, inicio: '09:00', fin: '12:00' },
+        martes: { activo: true, inicio: '12:00', fin: '13:00' },
+        miércoles: { activo: true, inicio: '09:00', fin: '12:00' },
+        jueves: { activo: true, inicio: '12:00', fin: '13:00' },
+        viernes: { activo: true, inicio: '13:00', fin: '14:00' }
+    },
+    DEFAULT_PRECIOS: {
+        cantidad_15: 20,
+        cantidad_20: 25, 
+        cantidad_25: 30,
+        precio_extra: 5,
+        paquetes: {
+            Chocolate: 15,
+            Fitness: 10,
+            Fresita: 10,
+            Lechera: 25,
+            Gansito: 15
+        }
+    },
+    DEFAULT_PUNTOS: [
+        'Puerta de EMA 1', 'Puerta de EMA 2', 'Puerta de EMA 3', 'Puerta de EMA 4', 'Puerta de EMA 5',
+        'Puerta de EMA 6', 'Puerta de EMA 7', 'Puerta de EMA 8', 'Puerta de EMA 9', 'Puerta de EMA 10',
+        'Cafetería', 'Oxxo', 'Lobo'
+    ]
+};
+
+let appState = {
+    horarios: {},
+    precios: {},
+    puntosEntrega: [],
+    ingredientes: [],
+    paquetes: [],
+    configCargada: false
+};
+
+// ================= FUNCIONES PRINCIPALES =================
+
+async function cargarConfiguracion() {
+    try {
+        console.log('🚀 Iniciando carga de configuración...');
+        
+        // Cargar datos en paralelo
+        const [horariosData, preciosData, puntosData, ingredientesData, paquetesData] = await Promise.all([
+            fetchData('config/public/horarios'),
+            fetchData('config/public/precios'),
+            fetchData('config/public/puntos_entrega'),
+            fetchData('ingredients/public'),
+            fetchData('packages/public')
+        ]);
+
+        // Procesar respuestas
+        appState = {
+            horarios: horariosData || CONFIG.DEFAULT_HORARIOS,
+            precios: preciosData || CONFIG.DEFAULT_PRECIOS,
+            puntosEntrega: Array.isArray(puntosData) ? puntosData : CONFIG.DEFAULT_PUNTOS,
+            ingredientes: procesarIngredientes(ingredientesData),
+            paquetes: procesarPaquetes(paquetesData),
+            configCargada: true
         };
 
-        let appState = {
-            horarios: {},
-            precios: {},
-            puntosEntrega: [],
-            ingredientes: [],
-            paquetes: [],
-            configCargada: false
-        };
+        console.log('✅ Configuración cargada:', appState);
+        actualizarInterfaz();
 
-        // ================= FUNCIONES PRINCIPALES =================
+    } catch (error) {
+        console.error('❌ Error cargando configuración:', error);
+        usarConfiguracionPorDefecto();
+    }
+}
 
-        async function cargarConfiguracion() {
-            try {
-                console.log('🚀 Iniciando carga de configuración...');
-                
-                const [horarios, precios, puntos, ingredientes, paquetes] = await Promise.all([
-                    fetchData('config/public/horarios', CONFIG.DEFAULT_HORARIOS),
-                    fetchData('config/public/precios', CONFIG.DEFAULT_PRECIOS),
-                    fetchData('config/public/puntos_entrega', CONFIG.DEFAULT_PUNTOS),
-                    fetchData('ingredients/public', []),
-                    fetchData('packages/public', [])
-                ]);
-
-                appState = {
-                    horarios: horarios,
-                    precios: precios,
-                    puntosEntrega: puntos,
-                    ingredientes: Array.isArray(ingredientes.ingredients) ? ingredientes.ingredients : 
-                                 Array.isArray(ingredientes) ? ingredientes : [],
-                    paquetes: Array.isArray(paquetes.packages) ? paquetes.packages : 
-                              Array.isArray(paquetes) ? paquetes : [],
-                    configCargada: true
-                };
-
-                console.log('✅ Configuración cargada:', appState);
-                actualizarInterfaz();
-
-            } catch (error) {
-                console.error('❌ Error cargando configuración:', error);
-                usarConfiguracionPorDefecto();
-            }
+async function fetchData(endpoint) {
+    try {
+        console.log(`📡 Fetching: ${endpoint}`);
+        const response = await fetch(`${CONFIG.API_BASE_URL}/${endpoint}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status} - ${response.statusText}`);
         }
+        
+        const data = await response.json();
+        console.log(`✅ ${endpoint}:`, data);
+        return data;
+        
+    } catch (error) {
+        console.warn(`⚠️ Error en ${endpoint}:`, error.message);
+        return null;
+    }
+}
 
-        async function fetchData(endpoint, defaultValue) {
-            try {
-                const response = await fetch(`${CONFIG.API_BASE_URL}/${endpoint}`);
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-                return await response.json();
-            } catch (error) {
-                console.warn(`⚠️ Usando valores por defecto para ${endpoint}`);
-                return defaultValue;
-            }
-        }
+function procesarIngredientes(data) {
+    if (!data) return getIngredientesPorDefecto();
+    
+    // Manejar diferentes estructuras de respuesta
+    if (Array.isArray(data.ingredients)) return data.ingredients;
+    if (Array.isArray(data)) return data;
+    
+    console.warn('Estructura inesperada de ingredientes:', data);
+    return getIngredientesPorDefecto();
+}
 
-        function usarConfiguracionPorDefecto() {
-            appState = {
-                horarios: CONFIG.DEFAULT_HORARIOS,
-                precios: CONFIG.DEFAULT_PRECIOS,
-                puntosEntrega: CONFIG.DEFAULT_PUNTOS,
-                ingredientes: getIngredientesPorDefecto(),
-                paquetes: getPaquetesPorDefecto(),
-                configCargada: true
-            };
-            actualizarInterfaz();
-        }
+function procesarPaquetes(data) {
+    if (!data) return getPaquetesPorDefecto();
+    
+    // Manejar diferentes estructuras de respuesta
+    if (Array.isArray(data.packages)) return data.packages;
+    if (Array.isArray(data)) return data;
+    
+    console.warn('Estructura inesperada de paquetes:', data);
+    return getPaquetesPorDefecto();
+}
 
-        function actualizarInterfaz() {
-            actualizarHorarios();
-            actualizarPrecios();
-            actualizarPuntosEntrega();
-            actualizarIngredientes();
-            actualizarPaquetes();
-            inicializarEventListeners();
-        }
+function usarConfiguracionPorDefecto() {
+    appState = {
+        horarios: CONFIG.DEFAULT_HORARIOS,
+        precios: CONFIG.DEFAULT_PRECIOS,
+        puntosEntrega: CONFIG.DEFAULT_PUNTOS,
+        ingredientes: getIngredientesPorDefecto(),
+        paquetes: getPaquetesPorDefecto(),
+        configCargada: true
+    };
+    actualizarInterfaz();
+}
 
-        function actualizarHorarios() {
-            const container = document.getElementById('horarios-container');
-            if (!container) return;
+function actualizarInterfaz() {
+    actualizarHorarios();
+    actualizarPrecios();
+    actualizarPuntosEntrega();
+    actualizarIngredientes();
+    actualizarPaquetes();
+    inicializarEventListeners();
+}
 
-            let html = '';
-            let horariosActivos = 0;
+function actualizarHorarios() {
+    const container = document.getElementById('horarios-container');
+    if (!container) return;
 
-            Object.entries(appState.horarios).forEach(([dia, horario]) => {
-                if (horario.activo) {
-                    horariosActivos++;
-                    html += `
-                        <div class="horario-card">
-                            <h4>${capitalize(dia)}</h4>
-                            <p>${horario.inicio} - ${horario.fin}</p>
-                        </div>
-                    `;
-                }
-            });
+    let html = '';
+    let horariosActivos = 0;
 
-            if (horariosActivos === 0) {
-                html = `
-                    <div class="horario-card" style="grid-column: 1 / -1;">
-                        <h4>⚠️ Horarios no disponibles</h4>
-                        <p>Consulta nuestros horarios más tarde</p>
-                    </div>
-                `;
-            }
-
-            container.innerHTML = html;
-            actualizarSelectDias();
-        }
-
-        function actualizarSelectDias() {
-            const select = document.getElementById('dia');
-            if (!select) return;
-
-            while (select.options.length > 1) select.remove(1);
-
-            Object.entries(appState.horarios).forEach(([dia, horario]) => {
-                if (horario.activo) {
-                    const option = document.createElement('option');
-                    option.value = capitalize(dia);
-                    option.textContent = `${capitalize(dia)} (${horario.inicio} - ${horario.fin})`;
-                    select.appendChild(option);
-                }
-            });
-        }
-
-        function actualizarPrecios() {
-            const select = document.getElementById('quantity');
-            if (!select) return;
-
-            while (select.options.length > 1) select.remove(1);
-
-            const cantidades = [15, 20, 25];
-            cantidades.forEach(cantidad => {
-                const precio = appState.precios[`cantidad_${cantidad}`] || 
-                              appState.precios[cantidad] || 
-                              getPrecioPorDefecto(cantidad);
-                
-                if (precio) {
-                    const option = document.createElement('option');
-                    option.value = cantidad;
-                    option.textContent = `${cantidad} Mini Hot Cakes - $${precio} MXN`;
-                    select.appendChild(option);
-                }
-            });
-        }
-
-        function actualizarPuntosEntrega() {
-            const select = document.getElementById('punto');
-            if (!select) return;
-
-            while (select.options.length > 1) select.remove(1);
-
-            appState.puntosEntrega.forEach(punto => {
-                const option = document.createElement('option');
-                option.value = punto;
-                option.textContent = punto;
-                select.appendChild(option);
-            });
-        }
-
-        function actualizarIngredientes() {
-            const container = document.getElementById('ingredients-container');
-            if (!container) return;
-
-            const categorias = {
-                liquidos: appState.ingredientes.filter(i => i.category === 'liquidos'),
-                frutas: appState.ingredientes.filter(i => i.category === 'frutas'),
-                toppings: appState.ingredientes.filter(i => i.category === 'toppings'),
-                extras: appState.ingredientes.filter(i => i.category === 'extras')
-            };
-
-            let html = '';
-
-            if (appState.ingredientes.length === 0) {
-                html = `
-                    <div class="ingredient-category" style="grid-column: 1 / -1;">
-                        <h4>⚠️ Ingredientes no disponibles</h4>
-                        <p>Estamos actualizando nuestro menú</p>
-                    </div>
-                `;
-            } else {
-                Object.entries(categorias).forEach(([categoria, ingredientes]) => {
-                    if (ingredientes.length > 0) {
-                        html += crearCategoriaHTML(categoria, ingredientes);
-                    }
-                });
-            }
-
-            container.innerHTML = html;
-            actualizarCheckboxesIngredientes();
-        }
-
-        function actualizarPaquetes() {
-            const container = document.getElementById('packages-container');
-            const select = document.getElementById('package');
-            if (!container || !select) return;
-
-            let html = '';
-
-            // Paquetes desde la API
-            appState.paquetes.forEach(paquete => {
-                if (paquete.available) {
-                    html += `
-                        <div class="package-card" data-package="${paquete.name}" data-price="${paquete.price}">
-                            <i class="${paquete.icon || 'fas fa-box'}"></i>
-                            <h3>${paquete.name}</h3>
-                            <p>${paquete.description}</p>
-                            <div class="price">$${paquete.price} MXN</div>
-                            <div class="package-note">+ costo por cantidad de hot cakes</div>
-                            <button class="select-package-btn">Elegir</button>
-                        </div>
-                    `;
-                }
-            });
-
-            // Si no hay paquetes, usar por defecto
-            if (html === '') {
-                getPaquetesPorDefecto().forEach(paquete => {
-                    html += `
-                        <div class="package-card" data-package="${paquete.name}" data-price="${paquete.price}">
-                            <i class="${paquete.icon}"></i>
-                            <h3>${paquete.name}</h3>
-                            <p>${paquete.description}</p>
-                            <div class="price">$${paquete.price} MXN</div>
-                            <div class="package-note">+ costo por cantidad de hot cakes</div>
-                            <button class="select-package-btn">Elegir</button>
-                        </div>
-                    `;
-                });
-            }
-
-            // Agregar paquete personalizado
+    Object.entries(appState.horarios).forEach(([dia, horario]) => {
+        if (horario && horario.activo) {
+            horariosActivos++;
             html += `
-                <div class="package-card special" data-package="personalizado" data-price="0">
-                    <i class="fas fa-star"></i>
-                    <h3>Especialmente Personalizar</h3>
-                    <p>Crea tu propia combinación única</p>
-                    <div class="price">Desde $0 MXN</div>
-                    <div class="package-note">Elige tus ingredientes favoritos</div>
-                    <button class="select-package-btn">Crear Mi Combinación</button>
-                </div>
-            `;
-
-            container.innerHTML = html;
-
-            // Actualizar select
-            while (select.options.length > 1) select.remove(1);
-            
-            appState.paquetes.forEach(paquete => {
-                if (paquete.available) {
-                    const option = document.createElement('option');
-                    option.value = paquete.name;
-                    option.textContent = paquete.name;
-                    select.appendChild(option);
-                }
-            });
-
-            const personalizadoOption = document.createElement('option');
-            personalizadoOption.value = 'personalizado';
-            personalizadoOption.textContent = '✨ Personalizar Ingredientes';
-            select.appendChild(personalizadoOption);
-
-            inicializarEventListenersPaquetes();
-        }
-
-        // ================= FUNCIONES AUXILIARES =================
-
-        function capitalize(text) {
-            return text.charAt(0).toUpperCase() + text.slice(1);
-        }
-
-        function crearCategoriaHTML(categoria, ingredientes) {
-            const titulos = {
-                liquidos: '🥛 Líquidos',
-                frutas: '🍓 Frutas', 
-                toppings: '🍫 Toppings',
-                extras: '✨ Extras'
-            };
-
-            const notas = {
-                liquidos: 'Puedes elegir varios',
-                frutas: 'Elige solo 1',
-                toppings: 'Puedes elegir varios',
-                extras: '+$5 c/u'
-            };
-
-            return `
-                <div class="ingredient-category">
-                    <h4>${titulos[categoria]}</h4>
-                    <ul class="ingredient-list">
-                        ${ingredientes.map(ing => `
-                            <li>${ing.name} ${ing.hasExtraCost ? `(+$${ing.price})` : ''} ${!ing.available ? ' 🔴 AGOTADO' : ''}</li>
-                        `).join('')}
-                    </ul>
-                    <div class="selection-limit">${notas[categoria]}</div>
+                <div class="horario-card">
+                    <h4>${capitalize(dia)}</h4>
+                    <p>${horario.inicio} - ${horario.fin}</p>
                 </div>
             `;
         }
+    });
 
-        function actualizarCheckboxesIngredientes() {
-            ['liquidos', 'frutas', 'toppings', 'extras'].forEach(categoria => {
-                const container = document.getElementById(`${categoria}-checkbox`);
-                if (!container) return;
-
-                const ingredientes = appState.ingredientes.filter(i => i.category === categoria && i.available);
-                
-                if (ingredientes.length === 0) {
-                    container.innerHTML = '<div class="checkbox-item">No hay ingredientes disponibles</div>';
-                    return;
-                }
-
-                container.innerHTML = ingredientes.map(ing => `
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="${categoria}-${ing.name}" value="${ing.name}" data-precio="${ing.price}" data-categoria="${categoria}">
-                        <label for="${categoria}-${ing.name}">
-                            ${ing.name} ${ing.hasExtraCost ? `(+$${ing.price})` : ''}
-                        </label>
+    if (horariosActivos === 0) {
+        // Mostrar horarios por defecto si no hay activos
+        Object.entries(CONFIG.DEFAULT_HORARIOS).forEach(([dia, horario]) => {
+            if (horario.activo) {
+                html += `
+                    <div class="horario-card">
+                        <h4>${capitalize(dia)}</h4>
+                        <p>${horario.inicio} - ${horario.fin}</p>
                     </div>
-                `).join('');
-
-                // Configurar comportamiento de frutas (solo 1 selección)
-                if (categoria === 'frutas') {
-                    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-                    checkboxes.forEach(checkbox => {
-                        checkbox.addEventListener('change', function() {
-                            if (this.checked) {
-                                checkboxes.forEach(other => {
-                                    if (other !== this) other.checked = false;
-                                });
-                            }
-                        });
-                    });
-                }
-            });
-        }
-
-        function getIngredientesPorDefecto() {
-            return [
-                { name: 'Lechera', category: 'liquidos', price: 0, available: true, hasExtraCost: false },
-                { name: 'Nutella', category: 'liquidos', price: 5, available: true, hasExtraCost: true },
-                { name: 'Maple', category: 'liquidos', price: 0, available: true, hasExtraCost: false },
-                { name: 'Mermelada', category: 'liquidos', price: 0, available: true, hasExtraCost: false },
-                { name: 'Chocolate Hersheys', category: 'liquidos', price: 5, available: true, hasExtraCost: true },
-                { name: 'Plátano', category: 'frutas', price: 0, available: true, hasExtraCost: false },
-                { name: 'Manzana', category: 'frutas', price: 0, available: true, hasExtraCost: false },
-                { name: 'Fresa', category: 'frutas', price: 5, available: true, hasExtraCost: true },
-                { name: 'Durazno', category: 'frutas', price: 0, available: true, hasExtraCost: false },
-                { name: 'Granola', category: 'toppings', price: 0, available: true, hasExtraCost: false },
-                { name: 'Nuez', category: 'toppings', price: 0, available: true, hasExtraCost: false },
-                { name: 'Zucaritas', category: 'toppings', price: 0, available: true, hasExtraCost: false },
-                { name: 'Chispas chocolate', category: 'toppings', price: 0, available: true, hasExtraCost: false },
-                { name: 'Chispas colores', category: 'toppings', price: 0, available: true, hasExtraCost: false },
-                { name: 'Bombones', category: 'extras', price: 5, available: true, hasExtraCost: true },
-                { name: 'Oreo', category: 'extras', price: 5, available: true, hasExtraCost: true },
-                { name: 'Mazapán', category: 'extras', price: 5, available: true, hasExtraCost: true },
-                { name: 'Helado', category: 'extras', price: 5, available: true, hasExtraCost: true }
-            ];
-        }
-
-        function getPaquetesPorDefecto() {
-            return [
-                {
-                    name: 'Chocolate',
-                    description: 'Nutella + plátano + chispas de chocolate + oreo + nuez',
-                    price: 15,
-                    available: true,
-                    icon: 'fas fa-cookie-bite'
-                },
-                {
-                    name: 'Fitness',
-                    description: 'Granola + plátano + mermelada + nuez',
-                    price: 10,
-                    available: true,
-                    icon: 'fas fa-dumbbell'
-                },
-                {
-                    name: 'Fresita',
-                    description: 'Fresa + bombones + chispas de colores',
-                    price: 10,
-                    available: true,
-                    icon: 'fas fa-strawberry'
-                },
-                {
-                    name: 'Lechera',
-                    description: 'Lechera + mazapán + plátano + nuez',
-                    price: 25,
-                    available: true,
-                    icon: 'fas fa-cow'
-                },
-                {
-                    name: 'Gansito',
-                    description: 'Chocolate + fresa + bombones + chispas',
-                    price: 15,
-                    available: true,
-                    icon: 'fas fa-cake'
-                }
-            ];
-        }
-
-        function getPrecioPorDefecto(cantidad) {
-            const precios = { 15: 20, 20: 25, 25: 30 };
-            return precios[cantidad] || 0;
-        }
-
-        // ================= EVENT LISTENERS =================
-
-        function inicializarEventListeners() {
-            // Método de pago
-            document.querySelectorAll('.payment-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
-                    this.classList.add('selected');
-                    document.getElementById('paymentMethod').value = this.dataset.value;
-                    
-                    document.getElementById('transferencia-info').classList.toggle('hidden', this.dataset.value !== 'transferencia');
-                });
-            });
-
-            // Método de entrega
-            document.querySelectorAll('.delivery-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    document.querySelectorAll('.delivery-option').forEach(opt => opt.classList.remove('selected'));
-                    this.classList.add('selected');
-                    document.getElementById('delivery').value = this.dataset.value;
-                    
-                    const puntoEntrega = document.getElementById('punto-entrega');
-                    const puntoSelect = document.getElementById('punto');
-                    puntoEntrega.classList.toggle('hidden', this.dataset.value !== 'punto');
-                    puntoSelect.required = this.dataset.value === 'punto';
-                    if (this.dataset.value !== 'punto') puntoSelect.value = '';
-                });
-            });
-
-            // Cambios que afectan el precio
-            document.getElementById('quantity').addEventListener('change', calcularPrecio);
-            document.getElementById('package').addEventListener('change', function() {
-                document.getElementById('custom-combo').classList.toggle('hidden', this.value !== 'personalizado');
-                calcularPrecio();
-            });
-
-            // Cambio de día para actualizar horas
-            document.getElementById('dia').addEventListener('change', function() {
-                const dia = this.value.toLowerCase();
-                const horario = appState.horarios[dia];
-                const horaInput = document.getElementById('hora');
-                
-                if (horario && horario.activo) {
-                    horaInput.min = horario.inicio;
-                    horaInput.max = horario.fin;
-                    horaInput.value = horario.inicio;
-                }
-            });
-
-            // Envío del formulario
-            document.getElementById('orderForm').addEventListener('submit', enviarPedido);
-
-            // Scroll suave
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const target = document.querySelector(this.getAttribute('href'));
-                    if (target) {
-                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                });
-            });
-        }
-
-        function inicializarEventListenersPaquetes() {
-            document.querySelectorAll('.package-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    document.querySelectorAll('.package-card').forEach(c => c.classList.remove('selected'));
-                    this.classList.add('selected');
-                    
-                    const package = this.dataset.package;
-                    document.getElementById('package').value = package;
-                    document.getElementById('custom-combo').classList.toggle('hidden', package !== 'personalizado');
-                    
-                    calcularPrecio();
-                    document.getElementById('pedido').scrollIntoView({ behavior: 'smooth' });
-                });
-            });
-        }
-
-        // ================= CÁLCULO DE PRECIO =================
-
-        function calcularPrecio() {
-            const cantidad = parseInt(document.getElementById('quantity').value) || 0;
-            const package = document.getElementById('package').value;
-            let total = 0;
-            let detalles = '';
-
-            // Precio base por cantidad
-            const precioBase = appState.precios[`cantidad_${cantidad}`] || appState.precios[cantidad] || getPrecioPorDefecto(cantidad);
-            total += precioBase;
-            detalles = `Base (${cantidad} hot cakes): $${precioBase}`;
-
-            // Precio del paquete
-            if (package !== 'personalizado' && package !== '') {
-                const paquete = appState.paquetes.find(p => p.name === package) || 
-                               getPaquetesPorDefecto().find(p => p.name === package);
-                const precioPaquete = paquete ? paquete.price : 0;
-                total += precioPaquete;
-                detalles += ` + Paquete ${package}: $${precioPaquete}`;
+                `;
             }
-
-            // Ingredientes personalizados
-            if (package === 'personalizado') {
-                document.querySelectorAll('.checkbox-item input:checked').forEach(checkbox => {
-                    const precio = parseFloat(checkbox.dataset.precio) || 0;
-                    if (precio > 0) {
-                        total += precio;
-                        detalles += ` + ${checkbox.value}: $${precio}`;
-                    }
-                });
-            }
-
-            document.getElementById('priceCalc').textContent = `$${total} MXN`;
-            document.getElementById('priceDetails').textContent = detalles;
-            return total;
-        }
-
-        // ================= ENVÍO DE PEDIDO =================
-
-        async function enviarPedido(e) {
-            e.preventDefault();
-            
-            if (!appState.configCargada) {
-                Swal.fire('Error', 'La configuración aún se está cargando. Por favor espera.', 'warning');
-                return;
-            }
-
-            const formData = new FormData(e.target);
-            const customer = document.getElementById('customer').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            const quantity = document.getElementById('quantity').value;
-            const package = document.getElementById('package').value;
-            const dia = document.getElementById('dia').value;
-            const hora = document.getElementById('hora').value;
-            const delivery = document.getElementById('delivery').value;
-            const punto = document.getElementById('punto').value;
-            const paymentMethod = document.getElementById('paymentMethod').value;
-
-            // Validaciones
-            if (!customer || !phone || !quantity || !package || !dia || !hora || !delivery || !paymentMethod) {
-                Swal.fire('Error', 'Por favor completa todos los campos requeridos.', 'error');
-                return;
-            }
-
-            if (delivery === 'punto' && !punto) {
-                Swal.fire('Error', 'Por favor selecciona un punto de entrega.', 'error');
-                return;
-            }
-
-            try {
-                // Deshabilitar botón
-                const submitBtn = document.getElementById('submitBtn');
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-
-                // Obtener ingredientes seleccionados
-                const ingredientesSeleccionados = {
-                    liquidos: Array.from(document.querySelectorAll('#liquido-checkbox input:checked')).map(cb => cb.value),
-                    frutas: Array.from(document.querySelectorAll('#fruta-checkbox input:checked')).map(cb => cb.value),
-                    toppings: Array.from(document.querySelectorAll('#topping-checkbox input:checked')).map(cb => cb.value),
-                    extras: Array.from(document.querySelectorAll('#extras-checkbox input:checked')).map(cb => cb.value)
-                };
-
-                // Calcular precio final
-                const total = calcularPrecio();
-
-                // Datos del pedido
-                const pedidoData = {
-                    customer,
-                    phone,
-                    quantity: parseInt(quantity),
-                    package,
-                    liquidos: package === 'personalizado' ? ingredientesSeleccionados.liquidos : [],
-                    frutas: package === 'personalizado' ? ingredientesSeleccionados.frutas : [],
-                    toppings: package === 'personalizado' ? ingredientesSeleccionados.toppings : [],
-                    extras: package === 'personalizado' ? ingredientesSeleccionados.extras : [],
-                    delivery,
-                    punto: delivery === 'punto' ? punto : 'Palapas frente al Lobo',
-                    dia,
-                    hora,
-                    total,
-                    paymentMethod,
-                    paymentConfirmed: paymentMethod === 'efectivo',
-                    notas: document.getElementById('extras').value.trim() || ''
-                };
-
-                // Enviar pedido
-                const response = await fetch(`${CONFIG.API_BASE_URL}/pedidos`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(pedidoData)
-                });
-
-                if (!response.ok) throw new Error('Error al enviar pedido');
-
-                const result = await response.json();
-
-                // Mostrar éxito
-                await Swal.fire({
-                    title: '¡Pedido Enviado! 🎉',
-                    html: `
-                        <div style="text-align: left;">
-                            <strong>Recoge en:</strong> ${pedidoData.punto}<br>
-                            <strong>Fecha:</strong> ${dia} a las ${hora}<br>
-                            <strong>Total:</strong> $${total} MXN<br>
-                            ${paymentMethod === 'transferencia' ? `
-                                <br><strong>💳 Para transferencia:</strong><br>
-                                Realiza la transferencia y envía comprobante al WhatsApp
-                            ` : '<br><strong>💰 Pago en efectivo al recoger</strong>'}
-                        </div>
-                    `,
-                    icon: 'success',
-                    confirmButtonColor: '#7d3c98'
-                });
-
-                // Limpiar formulario
-                e.target.reset();
-                document.querySelectorAll('.package-card').forEach(card => card.classList.remove('selected'));
-                document.querySelectorAll('.checkbox-item input').forEach(checkbox => checkbox.checked = false);
-                document.querySelectorAll('.payment-option, .delivery-option').forEach(opt => opt.classList.remove('selected'));
-                document.getElementById('custom-combo').classList.add('hidden');
-                document.getElementById('punto-entrega').classList.add('hidden');
-                document.getElementById('transferencia-info').classList.add('hidden');
-                document.getElementById('priceCalc').textContent = '$0 MXN';
-                document.getElementById('priceDetails').textContent = 'El precio se calculará automáticamente';
-
-            } catch (error) {
-                console.error('Error enviando pedido:', error);
-                Swal.fire('Error', 'No se pudo enviar el pedido. Intenta nuevamente.', 'error');
-            } finally {
-                const submitBtn = document.getElementById('submitBtn');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Pedido';
-            }
-        }
-
-        // ================= INICIALIZACIÓN =================
-
-        document.addEventListener('DOMContentLoaded', function() {
-            cargarConfiguracion();
         });
+    }
+
+    container.innerHTML = html;
+    actualizarSelectDias();
+}
+
+function actualizarSelectDias() {
+    const select = document.getElementById('dia');
+    if (!select) return;
+
+    // Limpiar opciones excepto la primera
+    while (select.options.length > 1) select.remove(1);
+
+    // Agregar días activos
+    Object.entries(appState.horarios).forEach(([dia, horario]) => {
+        if (horario && horario.activo) {
+            const option = document.createElement('option');
+            option.value = capitalize(dia);
+            option.textContent = `${capitalize(dia)} (${horario.inicio} - ${horario.fin})`;
+            select.appendChild(option);
+        }
+    });
+
+    // Si no hay días, agregar por defecto
+    if (select.options.length === 1) {
+        Object.entries(CONFIG.DEFAULT_HORARIOS).forEach(([dia, horario]) => {
+            if (horario.activo) {
+                const option = document.createElement('option');
+                option.value = capitalize(dia);
+                option.textContent = `${capitalize(dia)} (${horario.inicio} - ${horario.fin})`;
+                select.appendChild(option);
+            }
+        });
+    }
+}
+
+function actualizarPrecios() {
+    const select = document.getElementById('quantity');
+    if (!select) return;
+
+    // Limpiar opciones excepto la primera
+    while (select.options.length > 1) select.remove(1);
+
+    const cantidades = [15, 20, 25];
+    cantidades.forEach(cantidad => {
+        const precio = appState.precios[`cantidad_${cantidad}`] || 
+                      CONFIG.DEFAULT_PRECIOS[`cantidad_${cantidad}`] || 
+                      getPrecioPorDefecto(cantidad);
+        
+        if (precio) {
+            const option = document.createElement('option');
+            option.value = cantidad;
+            option.textContent = `${cantidad} Mini Hot Cakes - $${precio} MXN`;
+            select.appendChild(option);
+        }
+    });
+}
+
+function actualizarPuntosEntrega() {
+    const select = document.getElementById('punto');
+    if (!select) return;
+
+    // Limpiar opciones excepto la primera
+    while (select.options.length > 1) select.remove(1);
+
+    // Agregar puntos de entrega
+    appState.puntosEntrega.forEach(punto => {
+        const option = document.createElement('option');
+        option.value = punto;
+        option.textContent = punto;
+        select.appendChild(option);
+    });
+}
+
+function actualizarIngredientes() {
+    const container = document.getElementById('ingredients-container');
+    if (!container) return;
+
+    const categorias = {
+        liquidos: appState.ingredientes.filter(i => i.category === 'liquidos'),
+        frutas: appState.ingredientes.filter(i => i.category === 'frutas'),
+        toppings: appState.ingredientes.filter(i => i.category === 'toppings'),
+        extras: appState.ingredientes.filter(i => i.category === 'extras')
+    };
+
+    let html = '';
+
+    if (appState.ingredientes.length === 0) {
+        html = `
+            <div class="ingredient-category" style="grid-column: 1 / -1;">
+                <h4>⚠️ Ingredientes no disponibles</h4>
+                <p>Estamos actualizando nuestro menú</p>
+            </div>
+        `;
+    } else {
+        Object.entries(categorias).forEach(([categoria, ingredientes]) => {
+            if (ingredientes.length > 0) {
+                html += crearCategoriaHTML(categoria, ingredientes);
+            }
+        });
+    }
+
+    container.innerHTML = html;
+    actualizarCheckboxesIngredientes();
+}
+
+function actualizarPaquetes() {
+    const container = document.getElementById('packages-container');
+    const select = document.getElementById('package');
+    if (!container || !select) return;
+
+    let html = '';
+
+    // Paquetes desde la API
+    appState.paquetes.forEach(paquete => {
+        if (paquete.available !== false) { // Considerar disponible si no está explícitamente en false
+            html += `
+                <div class="package-card" data-package="${paquete.name}" data-price="${paquete.price}">
+                    <i class="${paquete.icon || 'fas fa-box'}"></i>
+                    <h3>${paquete.name}</h3>
+                    <p>${paquete.description || 'Deliciosa combinación de ingredientes'}</p>
+                    <div class="price">$${paquete.price} MXN</div>
+                    <div class="package-note">+ costo por cantidad de hot cakes</div>
+                    <button class="select-package-btn">Elegir</button>
+                </div>
+            `;
+        }
+    });
+
+    // Si no hay paquetes, usar por defecto
+    if (html === '') {
+        getPaquetesPorDefecto().forEach(paquete => {
+            html += `
+                <div class="package-card" data-package="${paquete.name}" data-price="${paquete.price}">
+                    <i class="${paquete.icon}"></i>
+                    <h3>${paquete.name}</h3>
+                    <p>${paquete.description}</p>
+                    <div class="price">$${paquete.price} MXN</div>
+                    <div class="package-note">+ costo por cantidad de hot cakes</div>
+                    <button class="select-package-btn">Elegir</button>
+                </div>
+            `;
+        });
+    }
+
+    // Agregar paquete personalizado
+    html += `
+        <div class="package-card special" data-package="personalizado" data-price="0">
+            <i class="fas fa-star"></i>
+            <h3>Especialmente Personalizar</h3>
+            <p>Crea tu propia combinación única</p>
+            <div class="price">Desde $0 MXN</div>
+            <div class="package-note">Elige tus ingredientes favoritos</div>
+            <button class="select-package-btn">Crear Mi Combinación</button>
+        </div>
+    `;
+
+    container.innerHTML = html;
+
+    // Actualizar select de paquetes
+    while (select.options.length > 1) select.remove(1);
+    
+    appState.paquetes.forEach(paquete => {
+        if (paquete.available !== false) {
+            const option = document.createElement('option');
+            option.value = paquete.name;
+            option.textContent = paquete.name;
+            select.appendChild(option);
+        }
+    });
+
+    const personalizadoOption = document.createElement('option');
+    personalizadoOption.value = 'personalizado';
+    personalizadoOption.textContent = '✨ Personalizar Ingredientes';
+    select.appendChild(personalizadoOption);
+
+    inicializarEventListenersPaquetes();
+}
+
+// ================= FUNCIONES AUXILIARES =================
+
+function capitalize(text) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function crearCategoriaHTML(categoria, ingredientes) {
+    const titulos = {
+        liquidos: '🥛 Líquidos',
+        frutas: '🍓 Frutas', 
+        toppings: '🍫 Toppings',
+        extras: '✨ Extras'
+    };
+
+    const notas = {
+        liquidos: 'Puedes elegir varios',
+        frutas: 'Elige solo 1',
+        toppings: 'Puedes elegir varios',
+        extras: '+$5 c/u'
+    };
+
+    return `
+        <div class="ingredient-category">
+            <h4>${titulos[categoria]}</h4>
+            <ul class="ingredient-list">
+                ${ingredientes.map(ing => `
+                    <li>${ing.name} ${ing.hasExtraCost ? `(+$${ing.price || 5})` : ''} ${ing.available === false ? ' 🔴 AGOTADO' : ''}</li>
+                `).join('')}
+            </ul>
+            <div class="selection-limit">${notas[categoria]}</div>
+        </div>
+    `;
+}
+
+function actualizarCheckboxesIngredientes() {
+    ['liquidos', 'frutas', 'toppings', 'extras'].forEach(categoria => {
+        const container = document.getElementById(`${categoria}-checkbox`);
+        if (!container) return;
+
+        const ingredientes = appState.ingredientes.filter(i => 
+            i.category === categoria && i.available !== false
+        );
+        
+        if (ingredientes.length === 0) {
+            container.innerHTML = '<div class="checkbox-item">No hay ingredientes disponibles</div>';
+            return;
+        }
+
+        container.innerHTML = ingredientes.map(ing => `
+            <div class="checkbox-item">
+                <input type="checkbox" id="${categoria}-${ing.name}" value="${ing.name}" data-precio="${ing.price || 0}" data-categoria="${categoria}">
+                <label for="${categoria}-${ing.name}">
+                    ${ing.name} ${ing.hasExtraCost ? `(+$${ing.price || 5})` : ''}
+                </label>
+            </div>
+        `).join('');
+
+        // Configurar comportamiento de frutas (solo 1 selección)
+        if (categoria === 'frutas') {
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        checkboxes.forEach(other => {
+                            if (other !== this) other.checked = false;
+                        });
+                    }
+                });
+            });
+        }
+    });
+}
+
+function getIngredientesPorDefecto() {
+    return [
+        { name: 'Lechera', category: 'liquidos', price: 0, available: true, hasExtraCost: false },
+        { name: 'Nutella', category: 'liquidos', price: 5, available: true, hasExtraCost: true },
+        { name: 'Maple', category: 'liquidos', price: 0, available: true, hasExtraCost: false },
+        { name: 'Mermelada', category: 'liquidos', price: 0, available: true, hasExtraCost: false },
+        { name: 'Chocolate Hersheys', category: 'liquidos', price: 5, available: true, hasExtraCost: true },
+        { name: 'Plátano', category: 'frutas', price: 0, available: true, hasExtraCost: false },
+        { name: 'Manzana', category: 'frutas', price: 0, available: true, hasExtraCost: false },
+        { name: 'Fresa', category: 'frutas', price: 5, available: true, hasExtraCost: true },
+        { name: 'Durazno', category: 'frutas', price: 0, available: true, hasExtraCost: false },
+        { name: 'Granola', category: 'toppings', price: 0, available: true, hasExtraCost: false },
+        { name: 'Nuez', category: 'toppings', price: 0, available: true, hasExtraCost: false },
+        { name: 'Zucaritas', category: 'toppings', price: 0, available: true, hasExtraCost: false },
+        { name: 'Chispas chocolate', category: 'toppings', price: 0, available: true, hasExtraCost: false },
+        { name: 'Chispas colores', category: 'toppings', price: 0, available: true, hasExtraCost: false },
+        { name: 'Bombones', category: 'extras', price: 5, available: true, hasExtraCost: true },
+        { name: 'Oreo', category: 'extras', price: 5, available: true, hasExtraCost: true },
+        { name: 'Mazapán', category: 'extras', price: 5, available: true, hasExtraCost: true },
+        { name: 'Helado', category: 'extras', price: 5, available: true, hasExtraCost: true }
+    ];
+}
+
+function getPaquetesPorDefecto() {
+    return [
+        {
+            name: 'Chocolate',
+            description: 'Nutella + plátano + chispas de chocolate + oreo + nuez',
+            price: 15,
+            available: true,
+            icon: 'fas fa-cookie-bite'
+        },
+        {
+            name: 'Fitness',
+            description: 'Granola + plátano + mermelada + nuez',
+            price: 10,
+            available: true,
+            icon: 'fas fa-dumbbell'
+        },
+        {
+            name: 'Fresita',
+            description: 'Fresa + bombones + chispas de colores',
+            price: 10,
+            available: true,
+            icon: 'fas fa-strawberry'
+        },
+        {
+            name: 'Lechera',
+            description: 'Lechera + mazapán + plátano + nuez',
+            price: 25,
+            available: true,
+            icon: 'fas fa-cow'
+        },
+        {
+            name: 'Gansito',
+            description: 'Chocolate + fresa + bombones + chispas',
+            price: 15,
+            available: true,
+            icon: 'fas fa-cake'
+        }
+    ];
+}
+
+function getPrecioPorDefecto(cantidad) {
+    const precios = { 15: 20, 20: 25, 25: 30 };
+    return precios[cantidad] || 0;
+}
+
+// ================= EVENT LISTENERS =================
+
+function inicializarEventListeners() {
+    // Método de pago
+    document.querySelectorAll('.payment-option').forEach(option => {
+        option.addEventListener('click', function() {
+            document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            document.getElementById('paymentMethod').value = this.dataset.value;
+            
+            document.getElementById('transferencia-info').classList.toggle('hidden', this.dataset.value !== 'transferencia');
+        });
+    });
+
+    // Método de entrega
+    document.querySelectorAll('.delivery-option').forEach(option => {
+        option.addEventListener('click', function() {
+            document.querySelectorAll('.delivery-option').forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            document.getElementById('delivery').value = this.dataset.value;
+            
+            const puntoEntrega = document.getElementById('punto-entrega');
+            const puntoSelect = document.getElementById('punto');
+            puntoEntrega.classList.toggle('hidden', this.dataset.value !== 'punto');
+            puntoSelect.required = this.dataset.value === 'punto';
+            if (this.dataset.value !== 'punto') puntoSelect.value = '';
+        });
+    });
+
+    // Cambios que afectan el precio
+    document.getElementById('quantity').addEventListener('change', calcularPrecio);
+    document.getElementById('package').addEventListener('change', function() {
+        document.getElementById('custom-combo').classList.toggle('hidden', this.value !== 'personalizado');
+        calcularPrecio();
+    });
+
+    // Cambio de día para actualizar horas
+    document.getElementById('dia').addEventListener('change', function() {
+        const dia = this.value.toLowerCase();
+        const horario = appState.horarios[dia] || CONFIG.DEFAULT_HORARIOS[dia];
+        const horaInput = document.getElementById('hora');
+        
+        if (horario && horario.activo) {
+            horaInput.min = horario.inicio;
+            horaInput.max = horario.fin;
+            horaInput.value = horario.inicio;
+        }
+    });
+
+    // Envío del formulario
+    document.getElementById('orderForm').addEventListener('submit', enviarPedido);
+
+    // Scroll suave
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+}
+
+function inicializarEventListenersPaquetes() {
+    document.querySelectorAll('.package-card .select-package-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const card = this.closest('.package-card');
+            
+            document.querySelectorAll('.package-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            
+            const package = card.dataset.package;
+            document.getElementById('package').value = package;
+            document.getElementById('custom-combo').classList.toggle('hidden', package !== 'personalizado');
+            
+            calcularPrecio();
+            document.getElementById('pedido').scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+}
+
+// ================= CÁLCULO DE PRECIO =================
+
+function calcularPrecio() {
+    const cantidad = parseInt(document.getElementById('quantity').value) || 0;
+    const package = document.getElementById('package').value;
+    let total = 0;
+    let detalles = '';
+
+    // Precio base por cantidad
+    const precioBase = appState.precios[`cantidad_${cantidad}`] || 
+                      CONFIG.DEFAULT_PRECIOS[`cantidad_${cantidad}`] || 
+                      getPrecioPorDefecto(cantidad);
+    total += precioBase;
+    detalles = `Base (${cantidad} hot cakes): $${precioBase}`;
+
+    // Precio del paquete
+    if (package !== 'personalizado' && package !== '') {
+        const paquete = appState.paquetes.find(p => p.name === package) || 
+                       getPaquetesPorDefecto().find(p => p.name === package);
+        const precioPaquete = paquete ? paquete.price : 0;
+        total += precioPaquete;
+        detalles += ` + Paquete ${package}: $${precioPaquete}`;
+    }
+
+    // Ingredientes personalizados
+    if (package === 'personalizado') {
+        document.querySelectorAll('.checkbox-item input:checked').forEach(checkbox => {
+            const precio = parseFloat(checkbox.dataset.precio) || 0;
+            if (precio > 0) {
+                total += precio;
+                detalles += ` + ${checkbox.value}: $${precio}`;
+            }
+        });
+    }
+
+    document.getElementById('priceCalc').textContent = `$${total} MXN`;
+    document.getElementById('priceDetails').textContent = detalles || 'El precio se calculará automáticamente';
+    return total;
+}
+
+// ================= ENVÍO DE PEDIDO =================
+
+async function enviarPedido(e) {
+    e.preventDefault();
+    
+    if (!appState.configCargada) {
+        Swal.fire('Error', 'La configuración aún se está cargando. Por favor espera.', 'warning');
+        return;
+    }
+
+    const customer = document.getElementById('customer').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const quantity = document.getElementById('quantity').value;
+    const package = document.getElementById('package').value;
+    const dia = document.getElementById('dia').value;
+    const hora = document.getElementById('hora').value;
+    const delivery = document.getElementById('delivery').value;
+    const punto = document.getElementById('punto').value;
+    const paymentMethod = document.getElementById('paymentMethod').value;
+    const notas = document.getElementById('extras').value.trim() || '';
+
+    // Validaciones
+    if (!customer || !phone || !quantity || !package || !dia || !hora || !delivery || !paymentMethod) {
+        Swal.fire('Error', 'Por favor completa todos los campos requeridos.', 'error');
+        return;
+    }
+
+    if (delivery === 'punto' && !punto) {
+        Swal.fire('Error', 'Por favor selecciona un punto de entrega.', 'error');
+        return;
+    }
+
+    try {
+        // Deshabilitar botón
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+        // Obtener ingredientes seleccionados
+        const ingredientesSeleccionados = {
+            liquidos: Array.from(document.querySelectorAll('#liquido-checkbox input:checked')).map(cb => cb.value),
+            frutas: Array.from(document.querySelectorAll('#fruta-checkbox input:checked')).map(cb => cb.value),
+            toppings: Array.from(document.querySelectorAll('#topping-checkbox input:checked')).map(cb => cb.value),
+            extras: Array.from(document.querySelectorAll('#extras-checkbox input:checked')).map(cb => cb.value)
+        };
+
+        // Calcular precio final
+        const total = calcularPrecio();
+
+        // Datos del pedido
+        const pedidoData = {
+            customer,
+            phone,
+            quantity: parseInt(quantity),
+            package,
+            liquidos: package === 'personalizado' ? ingredientesSeleccionados.liquidos : [],
+            frutas: package === 'personalizado' ? ingredientesSeleccionados.frutas : [],
+            toppings: package === 'personalizado' ? ingredientesSeleccionados.toppings : [],
+            extras: package === 'personalizado' ? ingredientesSeleccionados.extras : [],
+            delivery,
+            punto: delivery === 'punto' ? punto : 'Palapas frente al Lobo',
+            dia,
+            hora,
+            total,
+            paymentMethod,
+            paymentConfirmed: paymentMethod === 'efectivo',
+            notas
+        };
+
+        console.log('📦 Enviando pedido:', pedidoData);
+
+        // Enviar pedido
+        const response = await fetch(`${CONFIG.API_BASE_URL}/pedidos`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(pedidoData)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error ${response.status}: ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Pedido enviado:', result);
+
+        // Mostrar éxito
+        await Swal.fire({
+            title: '¡Pedido Enviado! 🎉',
+            html: `
+                <div style="text-align: left;">
+                    <strong>Recoge en:</strong> ${pedidoData.punto}<br>
+                    <strong>Fecha:</strong> ${dia} a las ${hora}<br>
+                    <strong>Total:</strong> $${total} MXN<br>
+                    <strong>Método de pago:</strong> ${paymentMethod === 'transferencia' ? 'Transferencia' : 'Efectivo'}<br>
+                    ${paymentMethod === 'transferencia' ? `
+                        <br><strong>💳 Para transferencia:</strong><br>
+                        Realiza la transferencia y envía comprobante al WhatsApp: 247 104 2170
+                    ` : '<br><strong>💰 Pago en efectivo al recoger</strong>'}
+                </div>
+            `,
+            icon: 'success',
+            confirmButtonColor: '#7d3c98',
+            confirmButtonText: 'Entendido'
+        });
+
+        // Limpiar formulario
+        document.getElementById('orderForm').reset();
+        document.querySelectorAll('.package-card').forEach(card => card.classList.remove('selected'));
+        document.querySelectorAll('.checkbox-item input').forEach(checkbox => checkbox.checked = false);
+        document.querySelectorAll('.payment-option, .delivery-option').forEach(opt => opt.classList.remove('selected'));
+        document.getElementById('custom-combo').classList.add('hidden');
+        document.getElementById('punto-entrega').classList.add('hidden');
+        document.getElementById('transferencia-info').classList.add('hidden');
+        document.getElementById('priceCalc').textContent = '$0 MXN';
+        document.getElementById('priceDetails').textContent = 'El precio se calculará automáticamente';
+
+    } catch (error) {
+        console.error('❌ Error enviando pedido:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'No se pudo enviar el pedido. Por favor intenta nuevamente.',
+            icon: 'error',
+            confirmButtonColor: '#e74c3c'
+        });
+    } finally {
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Pedido';
+    }
+}
+
+// ================= INICIALIZACIÓN =================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando aplicación Nabi Hot Cakes...');
+    cargarConfiguracion();
+});
     </script>
 </body>
 </html>
