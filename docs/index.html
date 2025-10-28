@@ -1066,8 +1066,8 @@
 
                     <div class="form-group" id="phone-group">
                         <label for="phone"><i class="fas fa-phone"></i> Tu Número</label>
-                        <input type="tel" id="phone" placeholder="Ej: 2471042170, 1234567890" pattern="[0-9,]+">
-                        <small>Puedes ingresar varios números separados por comas</small>
+                        <input type="tel" id="phone" placeholder="Ej: 2471042170" pattern="[0-9,]+">
+                 
                         <div class="error-message hidden">
                             <i class="fas fa-exclamation-circle"></i>
                             <span>Por favor ingresa al menos un número de teléfono</span>
@@ -1309,8 +1309,8 @@
         };
 
         // ================= SISTEMA DE VALIDACIÓN MEJORADO =================
-        class FormValidator {
-            static showFieldError(fieldId, message = '') {
+        const FormValidator = {
+            showFieldError: function(fieldId, message = '') {
                 const group = document.getElementById(fieldId);
                 if (!group) return;
                 
@@ -1334,9 +1334,9 @@
                 setTimeout(() => {
                     group.style.animation = 'shake 0.5s ease-in-out';
                 }, 10);
-            }
+            },
             
-            static hideFieldError(fieldId) {
+            hideFieldError: function(fieldId) {
                 const group = document.getElementById(fieldId);
                 if (group) {
                     group.classList.remove('error');
@@ -1345,9 +1345,9 @@
                         errorElement.classList.add('hidden');
                     }
                 }
-            }
+            },
             
-            static showSweetAlert(title, message, icon = 'error') {
+            showSweetAlert: function(title, message, icon = 'error') {
                 return Swal.fire({
                     title: title,
                     html: message,
@@ -1362,9 +1362,9 @@
                     background: 'linear-gradient(135deg, #f8f4ff 0%, #ffffff 100%)',
                     color: '#2c3e50'
                 });
-            }
+            },
             
-            static validateForm() {
+            validateForm: function() {
                 let isValid = true;
                 const errors = [];
                 
@@ -1489,11 +1489,11 @@
                 
                 return isValid;
             }
-        }
+        };
 
         // ================= SISTEMA DE PING AUTOMÁTICO =================
-        class BackendPingService {
-            static async start() {
+        const BackendPingService = {
+            start: async function() {
                 console.log('🚀 Iniciando servicio de ping automático...');
                 
                 // Ping inmediato al cargar
@@ -1503,9 +1503,9 @@
                 appState.pingInterval = setInterval(() => {
                     this.doPing();
                 }, CONFIG.PING_INTERVAL);
-            }
+            },
 
-            static async doPing() {
+            doPing: async function() {
                 try {
                     updateLoadingStatus('Verificando conexión con servidor...');
                     
@@ -1528,15 +1528,15 @@
                     console.warn('⚠️ Ping falló:', error.message);
                     return false;
                 }
-            }
+            },
 
-            static stop() {
+            stop: function() {
                 if (appState.pingInterval) {
                     clearInterval(appState.pingInterval);
                     console.log('🛑 Servicio de ping detenido');
                 }
             }
-        }
+        };
 
         // ================= MANEJO MEJORADO DE CARGA =================
         function updateLoadingStatus(message) {
