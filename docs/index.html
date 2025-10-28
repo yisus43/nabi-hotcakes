@@ -1308,6 +1308,150 @@
             }
         }
 
+        // ================= INGREDIENTES POR DEFECTO - GARANTIZADOS =================
+        const ingredientesPorDefecto = [
+            // LÍQUIDOS
+            { name: 'Lechera', category: 'liquidos', price: 0, available: true, hasExtraCost: false },
+            { name: 'Nutella', category: 'liquidos', price: 5, available: true, hasExtraCost: true },
+            { name: 'Maple', category: 'liquidos', price: 0, available: true, hasExtraCost: false },
+            { name: 'Mermelada', category: 'liquidos', price: 0, available: true, hasExtraCost: false },
+            { name: 'Chocolate Hersheys', category: 'liquidos', price: 5, available: true, hasExtraCost: true },
+            
+            // FRUTAS
+            { name: 'Plátano', category: 'frutas', price: 0, available: true, hasExtraCost: false },
+            { name: 'Manzana', category: 'frutas', price: 0, available: true, hasExtraCost: false },
+            { name: 'Fresa', category: 'frutas', price: 5, available: true, hasExtraCost: true },
+            { name: 'Durazno', category: 'frutas', price: 0, available: true, hasExtraCost: false },
+            
+            // TOPPINGS
+            { name: 'Granola', category: 'toppings', price: 0, available: true, hasExtraCost: false },
+            { name: 'Nuez', category: 'toppings', price: 0, available: true, hasExtraCost: false },
+            { name: 'Zucaritas', category: 'toppings', price: 0, available: true, hasExtraCost: false },
+            { name: 'Chispas chocolate', category: 'toppings', price: 0, available: true, hasExtraCost: false },
+            { name: 'Chispas colores', category: 'toppings', price: 0, available: true, hasExtraCost: false },
+            
+            // EXTRAS
+            { name: 'Bombones', category: 'extras', price: 5, available: true, hasExtraCost: true },
+            { name: 'Oreo', category: 'extras', price: 5, available: true, hasExtraCost: true },
+            { name: 'Mazapán', category: 'extras', price: 5, available: true, hasExtraCost: true },
+            { name: 'Helado', category: 'extras', price: 5, available: true, hasExtraCost: true }
+        ];
+
+        // ================= FUNCIÓN GARANTIZADA PARA CARGAR INGREDIENTES EN FORMULARIO =================
+        function cargarIngredientesFormulario() {
+            console.log('🚀 INICIANDO CARGA DE INGREDIENTES EN FORMULARIO...');
+            
+            const categorias = {
+                liquidos: ingredientesPorDefecto.filter(i => i.category === 'liquidos'),
+                frutas: ingredientesPorDefecto.filter(i => i.category === 'frutas'),
+                toppings: ingredientesPorDefecto.filter(i => i.category === 'toppings'),
+                extras: ingredientesPorDefecto.filter(i => i.category === 'extras')
+            };
+
+            console.log('📊 Ingredientes por categoría:', categorias);
+
+            // CARGAR LÍQUIDOS
+            const liquidoContainer = document.getElementById('liquido-checkbox');
+            if (liquidoContainer) {
+                let htmlLiquidos = '';
+                categorias.liquidos.forEach(ing => {
+                    const precioTexto = ing.hasExtraCost ? ` (+$${ing.price})` : '';
+                    htmlLiquidos += `
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="liquido-${ing.name.replace(/\s+/g, '-').toLowerCase()}" 
+                                   value="${ing.name}" 
+                                   data-precio="${ing.price}" 
+                                   data-categoria="liquidos"
+                                   onchange="calcularPrecio()">
+                            <label for="liquido-${ing.name.replace(/\s+/g, '-').toLowerCase()}">
+                                ${ing.name}${precioTexto}
+                            </label>
+                        </div>
+                    `;
+                });
+                liquidoContainer.innerHTML = htmlLiquidos;
+                console.log('✅ Líquidos cargados:', htmlLiquidos);
+            } else {
+                console.error('❌ No se encontró el contenedor de líquidos');
+            }
+
+            // CARGAR FRUTAS
+            const frutaContainer = document.getElementById('fruta-checkbox');
+            if (frutaContainer) {
+                let htmlFrutas = '';
+                categorias.frutas.forEach(ing => {
+                    const precioTexto = ing.hasExtraCost ? ` (+$${ing.price})` : '';
+                    htmlFrutas += `
+                        <div class="checkbox-item">
+                            <input type="radio" name="frutas" 
+                                   id="fruta-${ing.name.replace(/\s+/g, '-').toLowerCase()}" 
+                                   value="${ing.name}" 
+                                   data-precio="${ing.price}"
+                                   data-categoria="frutas"
+                                   onchange="calcularPrecio()">
+                            <label for="fruta-${ing.name.replace(/\s+/g, '-').toLowerCase()}">
+                                ${ing.name}${precioTexto}
+                            </label>
+                        </div>
+                    `;
+                });
+                frutaContainer.innerHTML = htmlFrutas;
+                console.log('✅ Frutas cargadas:', htmlFrutas);
+            } else {
+                console.error('❌ No se encontró el contenedor de frutas');
+            }
+
+            // CARGAR TOPPINGS
+            const toppingContainer = document.getElementById('topping-checkbox');
+            if (toppingContainer) {
+                let htmlToppings = '';
+                categorias.toppings.forEach(ing => {
+                    const precioTexto = ing.hasExtraCost ? ` (+$${ing.price})` : '';
+                    htmlToppings += `
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="topping-${ing.name.replace(/\s+/g, '-').toLowerCase()}" 
+                                   value="${ing.name}" 
+                                   data-precio="${ing.price}"
+                                   data-categoria="toppings"
+                                   onchange="calcularPrecio()">
+                            <label for="topping-${ing.name.replace(/\s+/g, '-').toLowerCase()}">
+                                ${ing.name}${precioTexto}
+                            </label>
+                        </div>
+                    `;
+                });
+                toppingContainer.innerHTML = htmlToppings;
+                console.log('✅ Toppings cargados:', htmlToppings);
+            } else {
+                console.error('❌ No se encontró el contenedor de toppings');
+            }
+
+            // CARGAR EXTRAS
+            const extrasContainer = document.getElementById('extras-checkbox');
+            if (extrasContainer) {
+                let htmlExtras = '';
+                categorias.extras.forEach(ing => {
+                    const precioTexto = ` (+$${ing.price})`;
+                    htmlExtras += `
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="extra-${ing.name.replace(/\s+/g, '-').toLowerCase()}" 
+                                   value="${ing.name}" 
+                                   data-precio="${ing.price}"
+                                   data-categoria="extras"
+                                   onchange="calcularPrecio()">
+                            <label for="extra-${ing.name.replace(/\s+/g, '-').toLowerCase()}">
+                                ${ing.name}${precioTexto}
+                            </label>
+                        </div>
+                    `;
+                });
+                extrasContainer.innerHTML = htmlExtras;
+                console.log('✅ Extras cargados:', htmlExtras);
+            } else {
+                console.error('❌ No se encontró el contenedor de extras');
+            }
+        }
+
         // ================= FUNCIONES PRINCIPALES MEJORADAS =================
         async function cargarConfiguracion() {
             showGlobalLoading();
@@ -1395,7 +1539,7 @@
         function procesarIngredientes(data) {
             if (!data) {
                 console.log('📝 Usando ingredientes por defecto');
-                return getIngredientesPorDefecto();
+                return ingredientesPorDefecto;
             }
             
             // Manejar diferentes estructuras de respuesta
@@ -1406,7 +1550,7 @@
                 ingredientes = data;
             } else {
                 console.warn('Estructura inesperada de ingredientes:', data);
-                ingredientes = getIngredientesPorDefecto();
+                ingredientes = ingredientesPorDefecto;
             }
             
             console.log('📦 Ingredientes procesados:', ingredientes);
@@ -1430,7 +1574,7 @@
                 horarios: CONFIG.DEFAULT_HORARIOS,
                 precios: CONFIG.DEFAULT_PRECIOS,
                 puntosEntrega: CONFIG.DEFAULT_PUNTOS,
-                ingredientes: getIngredientesPorDefecto(),
+                ingredientes: ingredientesPorDefecto,
                 paquetes: getPaquetesPorDefecto(),
                 configCargada: true
             };
@@ -1445,7 +1589,7 @@
             actualizarPuntosEntrega();
             actualizarIngredientes();
             actualizarPaquetes();
-            actualizarFormularioIngredientes(); // 🆕 FUNCIÓN CORREGIDA
+            cargarIngredientesFormulario(); // 🎯 ESTA ES LA FUNCIÓN CLAVE QUE FALTABA
             inicializarEventListeners();
         }
 
@@ -1579,92 +1723,6 @@
             container.innerHTML = html;
         }
 
-        // 🆕 FUNCIÓN COMPLETAMENTE CORREGIDA PARA ACTUALIZAR FORMULARIO
-        function actualizarFormularioIngredientes() {
-            console.log('🔄 Actualizando formulario de ingredientes...');
-            console.log('📦 Ingredientes disponibles:', appState.ingredientes);
-            
-            // Verificar que tenemos ingredientes
-            if (!appState.ingredientes || appState.ingredientes.length === 0) {
-                console.log('⚠️ No hay ingredientes disponibles, usando por defecto');
-                appState.ingredientes = getIngredientesPorDefecto();
-            }
-            
-            const categorias = {
-                liquidos: appState.ingredientes.filter(i => i.category === 'liquidos'),
-                frutas: appState.ingredientes.filter(i => i.category === 'frutas'),
-                toppings: appState.ingredientes.filter(i => i.category === 'toppings'),
-                extras: appState.ingredientes.filter(i => i.category === 'extras')
-            };
-
-            console.log('📊 Categorías procesadas:', categorias);
-
-            // Actualizar cada categoría en el formulario
-            Object.entries(categorias).forEach(([categoria, ingredientes]) => {
-                const container = document.getElementById(`${categoria}-checkbox`);
-                console.log(`📝 Procesando categoría: ${categoria}`, container, ingredientes);
-                
-                if (!container) {
-                    console.error(`❌ No se encontró el contenedor para: ${categoria}`);
-                    return;
-                }
-
-                let html = '';
-
-                if (ingredientes.length === 0) {
-                    html = '<div class="checkbox-item">No hay ingredientes disponibles en esta categoría</div>';
-                    console.log(`⚠️ No hay ingredientes para: ${categoria}`);
-                } else {
-                    console.log(`✅ ${ingredientes.length} ingredientes para: ${categoria}`);
-                    ingredientes.forEach(ingrediente => {
-                        const precioTexto = ingrediente.hasExtraCost ? ` (+$${ingrediente.price || 5})` : '';
-                        const disponible = ingrediente.available !== false;
-                        const deshabilitado = !disponible ? 'disabled' : '';
-                        
-                        // Para frutas usar radio buttons, para otros usar checkboxes
-                        const inputType = categoria === 'frutas' ? 'radio' : 'checkbox';
-                        const nameAttr = categoria === 'frutas' ? 'name="frutas"' : '';
-                        
-                        html += `
-                            <div class="checkbox-item ${!disponible ? 'disabled' : ''}">
-                                <input type="${inputType}" 
-                                       ${nameAttr}
-                                       id="form-${categoria}-${ingrediente.name.replace(/\s+/g, '-').toLowerCase()}" 
-                                       value="${ingrediente.name}" 
-                                       data-precio="${ingrediente.price || 0}" 
-                                       data-categoria="${categoria}"
-                                       ${deshabilitado}
-                                       onchange="calcularPrecio()">
-                                <label for="form-${categoria}-${ingrediente.name.replace(/\s+/g, '-').toLowerCase()}" class="${!disponible ? 'text-muted' : ''}">
-                                    ${ingrediente.name}${precioTexto} ${!disponible ? ' (AGOTADO)' : ''}
-                                </label>
-                            </div>
-                        `;
-                    });
-                }
-
-                container.innerHTML = html;
-                console.log(`✅ Categoría ${categoria} actualizada:`, html);
-            });
-
-            // Configurar comportamiento de selección única para frutas
-            configurarSeleccionUnicaFrutas();
-        }
-
-        function configurarSeleccionUnicaFrutas() {
-            const frutasCheckboxes = document.querySelectorAll('#fruta-checkbox input[type="radio"]');
-            frutasCheckboxes.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    if (this.checked) {
-                        // Desmarcar todas las otras frutas
-                        frutasCheckboxes.forEach(other => {
-                            if (other !== this) other.checked = false;
-                        });
-                    }
-                });
-            });
-        }
-
         function actualizarPaquetes() {
             const container = document.getElementById('packages-container');
             const select = document.getElementById('package');
@@ -1767,29 +1825,6 @@
                     <div class="selection-limit">${notas[categoria]}</div>
                 </div>
             `;
-        }
-
-        function getIngredientesPorDefecto() {
-            return [
-                { name: 'Lechera', category: 'liquidos', price: 0, available: true, hasExtraCost: false },
-                { name: 'Nutella', category: 'liquidos', price: 5, available: true, hasExtraCost: true },
-                { name: 'Maple', category: 'liquidos', price: 0, available: true, hasExtraCost: false },
-                { name: 'Mermelada', category: 'liquidos', price: 0, available: true, hasExtraCost: false },
-                { name: 'Chocolate Hersheys', category: 'liquidos', price: 5, available: true, hasExtraCost: true },
-                { name: 'Plátano', category: 'frutas', price: 0, available: true, hasExtraCost: false },
-                { name: 'Manzana', category: 'frutas', price: 0, available: true, hasExtraCost: false },
-                { name: 'Fresa', category: 'frutas', price: 5, available: true, hasExtraCost: true },
-                { name: 'Durazno', category: 'frutas', price: 0, available: true, hasExtraCost: false },
-                { name: 'Granola', category: 'toppings', price: 0, available: true, hasExtraCost: false },
-                { name: 'Nuez', category: 'toppings', price: 0, available: true, hasExtraCost: false },
-                { name: 'Zucaritas', category: 'toppings', price: 0, available: true, hasExtraCost: false },
-                { name: 'Chispas chocolate', category: 'toppings', price: 0, available: true, hasExtraCost: false },
-                { name: 'Chispas colores', category: 'toppings', price: 0, available: true, hasExtraCost: false },
-                { name: 'Bombones', category: 'extras', price: 5, available: true, hasExtraCost: true },
-                { name: 'Oreo', category: 'extras', price: 5, available: true, hasExtraCost: true },
-                { name: 'Mazapán', category: 'extras', price: 5, available: true, hasExtraCost: true },
-                { name: 'Helado', category: 'extras', price: 5, available: true, hasExtraCost: true }
-            ];
         }
 
         function getPaquetesPorDefecto() {
