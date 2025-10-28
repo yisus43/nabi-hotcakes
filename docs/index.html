@@ -471,6 +471,7 @@
         /* ================= FORMULARIO ================= */
         .form-group {
             margin-bottom: 2rem;
+            position: relative;
         }
 
         .form-group label {
@@ -493,6 +494,32 @@
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(125, 60, 152, 0.1);
+        }
+
+        .form-group.error input,
+        .form-group.error select {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+        }
+
+        .form-group.error label {
+            color: #e74c3c;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
 
         .payment-options, .delivery-options {
@@ -520,6 +547,11 @@
         .payment-option.selected, .delivery-option.selected {
             border-color: var(--primary);
             background: var(--accent);
+        }
+
+        .payment-option.error, .delivery-option.error {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.05);
         }
 
         .payment-option i {
@@ -1023,30 +1055,47 @@
             <h2 class="section-title">Personaliza Tu Pedido</h2>
             <div class="order-container fade-in">
                 <form id="orderForm">
-                    <div class="form-group">
+                    <div class="form-group" id="customer-group">
                         <label for="customer"><i class="fas fa-user"></i> Tu Nombre</label>
-                        <input type="text" id="customer" placeholder="Ej: Ana Martínez" required>
+                        <input type="text" id="customer" placeholder="Ej: Ana Martínez">
+                        <div class="error-message hidden">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Por favor ingresa tu nombre</span>
+                        </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="phone-group">
                         <label for="phone"><i class="fas fa-phone"></i> Tu Número</label>
-                        <input type="tel" id="phone" placeholder="+52 123 456 7890" pattern="^\+?\d{10,15}$" required>
+                        <input type="tel" id="phone" placeholder="Ej: 2471042170, 1234567890" pattern="[0-9,]+">
+                        <small>Puedes ingresar varios números separados por comas</small>
+                        <div class="error-message hidden">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Por favor ingresa al menos un número de teléfono</span>
+                        </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="quantity-group">
                         <label for="quantity"><i class="fas fa-sort-amount-up"></i> Cantidad de mini Hot Cakes</label>
-                        <select id="quantity" required>
+                        <select id="quantity">
                             <option value="">Selecciona cantidad</option>
                             <!-- Las opciones se cargarán dinámicamente -->
                         </select>
+                        <div class="error-message hidden">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Por favor selecciona la cantidad</span>
+                        </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="package-group">
                         <label for="package"><i class="fas fa-box"></i> Tipo de Paquete</label>
-                        <select id="package" required>
+                        <select id="package">
                             <option value="">Selecciona un paquete</option>
                             <!-- Las opciones se cargarán dinámicamente -->
                         </select>
+                        <div class="error-message hidden">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Por favor selecciona un paquete</span>
+                        </div>
                     </div>
 
                     <div class="form-group hidden" id="custom-combo">
@@ -1079,7 +1128,7 @@
                     </div>
 
                     <!-- MÉTODO DE PAGO -->
-                    <div class="form-group">
+                    <div class="form-group" id="payment-group">
                         <label><i class="fas fa-credit-card"></i> Método de Pago</label>
                         <div class="payment-options">
                             <div class="payment-option" data-value="efectivo">
@@ -1093,7 +1142,11 @@
                                 <small>Antes de recoger</small>
                             </div>
                         </div>
-                        <input type="hidden" id="paymentMethod" required>
+                        <input type="hidden" id="paymentMethod">
+                        <div class="error-message hidden">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Por favor selecciona un método de pago</span>
+                        </div>
                     </div>
 
                     <!-- INFORMACIÓN DE TRANSFERENCIA -->
@@ -1115,36 +1168,52 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="delivery-group">
                         <label><i class="fas fa-map-marker-alt"></i> Método de Entrega</label>
                         <div class="delivery-options">
                             <div class="delivery-option" data-value="recoger">Recoger en Lobo</div>
                             <div class="delivery-option" data-value="punto">Entrega en Punto</div>
                         </div>
-                        <input type="hidden" id="delivery" required>
+                        <input type="hidden" id="delivery">
+                        <div class="error-message hidden">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Por favor selecciona un método de entrega</span>
+                        </div>
                     </div>
 
-                    <div class="form-group hidden" id="punto-entrega">
+                    <div class="form-group hidden" id="punto-entrega-group">
                         <label for="punto"><i class="fas fa-location-dot"></i> Punto de Entrega</label>
                         <select id="punto">
                             <option value="">Selecciona un punto</option>
                             <!-- Las opciones se cargarán dinámicamente -->
                         </select>
+                        <div class="error-message hidden">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Por favor selecciona un punto de entrega</span>
+                        </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="dia-group">
                         <label for="dia"><i class="fas fa-calendar"></i> Día para recoger</label>
-                        <select id="dia" required>
+                        <select id="dia">
                             <option value="">Selecciona un día</option>
                             <!-- Las opciones se cargarán dinámicamente -->
                         </select>
+                        <div class="error-message hidden">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Por favor selecciona un día</span>
+                        </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="hora-group">
                         <label for="hora"><i class="fas fa-clock"></i> Hora de Recoger</label>
                         <div class="hora-input">
-                            <input type="time" id="hora" min="09:00" max="14:00" step="300" required>
+                            <input type="time" id="hora" min="09:00" max="14:00" step="300">
                             <small>Selecciona una hora dentro del horario del día elegido</small>
+                        </div>
+                        <div class="error-message hidden">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Por favor selecciona una hora</span>
                         </div>
                     </div>
 
@@ -1238,6 +1307,189 @@
             pingInterval: null,
             retryCount: 0
         };
+
+        // ================= SISTEMA DE VALIDACIÓN MEJORADO =================
+        class FormValidator {
+            static showFieldError(fieldId, message = '') {
+                const group = document.getElementById(fieldId);
+                if (!group) return;
+                
+                group.classList.add('error');
+                const errorElement = group.querySelector('.error-message');
+                if (errorElement) {
+                    if (message) {
+                        errorElement.querySelector('span').textContent = message;
+                    }
+                    errorElement.classList.remove('hidden');
+                }
+                
+                // Scroll suave al campo con error
+                group.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center'
+                });
+                
+                // Efecto de shake
+                group.style.animation = 'none';
+                setTimeout(() => {
+                    group.style.animation = 'shake 0.5s ease-in-out';
+                }, 10);
+            }
+            
+            static hideFieldError(fieldId) {
+                const group = document.getElementById(fieldId);
+                if (group) {
+                    group.classList.remove('error');
+                    const errorElement = group.querySelector('.error-message');
+                    if (errorElement) {
+                        errorElement.classList.add('hidden');
+                    }
+                }
+            }
+            
+            static showSweetAlert(title, message, icon = 'error') {
+                return Swal.fire({
+                    title: title,
+                    html: message,
+                    icon: icon,
+                    confirmButtonColor: '#7d3c98',
+                    confirmButtonText: 'Entendido',
+                    customClass: {
+                        popup: 'animated pulse',
+                        title: 'swal-title-custom',
+                        htmlContainer: 'swal-html-custom'
+                    },
+                    background: 'linear-gradient(135deg, #f8f4ff 0%, #ffffff 100%)',
+                    color: '#2c3e50'
+                });
+            }
+            
+            static validateForm() {
+                let isValid = true;
+                const errors = [];
+                
+                // Validar nombre
+                const customer = document.getElementById('customer').value.trim();
+                if (!customer) {
+                    this.showFieldError('customer-group');
+                    errors.push('nombre');
+                    isValid = false;
+                } else {
+                    this.hideFieldError('customer-group');
+                }
+                
+                // Validar teléfono
+                const phone = document.getElementById('phone').value.trim();
+                if (!phone) {
+                    this.showFieldError('phone-group');
+                    errors.push('teléfono');
+                    isValid = false;
+                } else if (!/^[0-9,]+$/.test(phone)) {
+                    this.showFieldError('phone-group', 'El teléfono solo puede contener números y comas');
+                    errors.push('formato de teléfono');
+                    isValid = false;
+                } else {
+                    this.hideFieldError('phone-group');
+                }
+                
+                // Validar cantidad
+                const quantity = document.getElementById('quantity').value;
+                if (!quantity) {
+                    this.showFieldError('quantity-group');
+                    errors.push('cantidad de hot cakes');
+                    isValid = false;
+                } else {
+                    this.hideFieldError('quantity-group');
+                }
+                
+                // Validar paquete
+                const package = document.getElementById('package').value;
+                if (!package) {
+                    this.showFieldError('package-group');
+                    errors.push('tipo de paquete');
+                    isValid = false;
+                } else {
+                    this.hideFieldError('package-group');
+                }
+                
+                // Validar día
+                const dia = document.getElementById('dia').value;
+                if (!dia) {
+                    this.showFieldError('dia-group');
+                    errors.push('día para recoger');
+                    isValid = false;
+                } else {
+                    this.hideFieldError('dia-group');
+                }
+                
+                // Validar hora
+                const hora = document.getElementById('hora').value;
+                if (!hora) {
+                    this.showFieldError('hora-group');
+                    errors.push('hora de recoger');
+                    isValid = false;
+                } else {
+                    this.hideFieldError('hora-group');
+                }
+                
+                // Validar método de entrega
+                const delivery = document.getElementById('delivery').value;
+                if (!delivery) {
+                    this.showFieldError('delivery-group');
+                    errors.push('método de entrega');
+                    isValid = false;
+                } else {
+                    this.hideFieldError('delivery-group');
+                    
+                    // Validar punto de entrega si es necesario
+                    if (delivery === 'punto') {
+                        const punto = document.getElementById('punto').value;
+                        if (!punto) {
+                            this.showFieldError('punto-entrega-group');
+                            errors.push('punto de entrega');
+                            isValid = false;
+                        } else {
+                            this.hideFieldError('punto-entrega-group');
+                        }
+                    }
+                }
+                
+                // Validar método de pago
+                const paymentMethod = document.getElementById('paymentMethod').value;
+                if (!paymentMethod) {
+                    this.showFieldError('payment-group');
+                    errors.push('método de pago');
+                    isValid = false;
+                } else {
+                    this.hideFieldError('payment-group');
+                }
+                
+                // Mostrar alerta general si hay errores
+                if (!isValid && errors.length > 0) {
+                    const errorList = errors.map(error => 
+                        `<div style="display: flex; align-items: center; gap: 10px; margin: 8px 0;">
+                            <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i>
+                            <span><strong>${error.charAt(0).toUpperCase() + error.slice(1)}</strong></span>
+                        </div>`
+                    ).join('');
+                    
+                    this.showSweetAlert(
+                        '¡Faltan algunos datos! 🚨',
+                        `<div style="text-align: left;">
+                            <p style="margin-bottom: 15px;">Por favor completa los siguientes campos:</p>
+                            ${errorList}
+                            <div style="margin-top: 20px; padding: 12px; background: #f0e6ff; border-radius: 8px; border-left: 4px solid #7d3c98;">
+                                <i class="fas fa-lightbulb" style="color: #7d3c98;"></i>
+                                <small>Los campos marcados en rojo necesitan tu atención</small>
+                            </div>
+                        </div>`,
+                        'warning'
+                    );
+                }
+                
+                return isValid;
+            }
+        }
 
         // ================= SISTEMA DE PING AUTOMÁTICO =================
         class BackendPingService {
@@ -1598,7 +1850,7 @@
             actualizarPuntosEntrega();
             actualizarIngredientes();
             actualizarPaquetes();
-            cargarIngredientesFormulario(); // 🎯 ESTA ES LA FUNCIÓN CLAVE - USA INGREDIENTES DEL BACKEND
+            cargarIngredientesFormulario();
             inicializarEventListeners();
         }
 
@@ -1909,9 +2161,12 @@
             // Método de pago
             document.querySelectorAll('.payment-option').forEach(option => {
                 option.addEventListener('click', function() {
-                    document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
+                    document.querySelectorAll('.payment-option').forEach(opt => {
+                        opt.classList.remove('selected', 'error');
+                    });
                     this.classList.add('selected');
                     document.getElementById('paymentMethod').value = this.dataset.value;
+                    FormValidator.hideFieldError('payment-group');
                     
                     document.getElementById('transferencia-info').classList.toggle('hidden', this.dataset.value !== 'transferencia');
                 });
@@ -1920,23 +2175,33 @@
             // Método de entrega
             document.querySelectorAll('.delivery-option').forEach(option => {
                 option.addEventListener('click', function() {
-                    document.querySelectorAll('.delivery-option').forEach(opt => opt.classList.remove('selected'));
+                    document.querySelectorAll('.delivery-option').forEach(opt => {
+                        opt.classList.remove('selected', 'error');
+                    });
                     this.classList.add('selected');
                     document.getElementById('delivery').value = this.dataset.value;
+                    FormValidator.hideFieldError('delivery-group');
                     
-                    const puntoEntrega = document.getElementById('punto-entrega');
+                    const puntoEntrega = document.getElementById('punto-entrega-group');
                     const puntoSelect = document.getElementById('punto');
                     puntoEntrega.classList.toggle('hidden', this.dataset.value !== 'punto');
-                    puntoSelect.required = this.dataset.value === 'punto';
-                    if (this.dataset.value !== 'punto') puntoSelect.value = '';
+                    if (this.dataset.value !== 'punto') {
+                        puntoSelect.value = '';
+                        FormValidator.hideFieldError('punto-entrega-group');
+                    }
                 });
             });
 
             // Cambios que afectan el precio
-            document.getElementById('quantity').addEventListener('change', calcularPrecio);
+            document.getElementById('quantity').addEventListener('change', function() {
+                calcularPrecio();
+                FormValidator.hideFieldError('quantity-group');
+            });
+            
             document.getElementById('package').addEventListener('change', function() {
                 document.getElementById('custom-combo').classList.toggle('hidden', this.value !== 'personalizado');
                 calcularPrecio();
+                FormValidator.hideFieldError('package-group');
             });
 
             // Cambio de día para actualizar horas
@@ -1950,6 +2215,24 @@
                     horaInput.max = horario.fin;
                     horaInput.value = horario.inicio;
                 }
+                FormValidator.hideFieldError('dia-group');
+            });
+
+            // Input events para limpiar errores
+            document.getElementById('customer').addEventListener('input', function() {
+                FormValidator.hideFieldError('customer-group');
+            });
+            
+            document.getElementById('phone').addEventListener('input', function() {
+                FormValidator.hideFieldError('phone-group');
+            });
+            
+            document.getElementById('hora').addEventListener('input', function() {
+                FormValidator.hideFieldError('hora-group');
+            });
+            
+            document.getElementById('punto').addEventListener('change', function() {
+                FormValidator.hideFieldError('punto-entrega-group');
             });
 
             // Envío del formulario
@@ -1981,6 +2264,7 @@
                     document.getElementById('custom-combo').classList.toggle('hidden', package !== 'personalizado');
                     
                     calcularPrecio();
+                    FormValidator.hideFieldError('package-group');
                     document.getElementById('pedido').scrollIntoView({ behavior: 'smooth' });
                 });
             });
@@ -2027,34 +2311,21 @@
             return total;
         }
 
-        // ================= ENVÍO DE PEDIDO =================
+        // ================= ENVÍO DE PEDIDO MEJORADO =================
         async function enviarPedido(e) {
             e.preventDefault();
             
             if (!appState.configCargada) {
-                Swal.fire('Error', 'La configuración aún se está cargando. Por favor espera.', 'warning');
+                FormValidator.showSweetAlert(
+                    'Sistema ocupado ⏳', 
+                    'La configuración aún se está cargando. Por favor espera un momento.',
+                    'warning'
+                );
                 return;
             }
 
-            const customer = document.getElementById('customer').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            const quantity = document.getElementById('quantity').value;
-            const package = document.getElementById('package').value;
-            const dia = document.getElementById('dia').value;
-            const hora = document.getElementById('hora').value;
-            const delivery = document.getElementById('delivery').value;
-            const punto = document.getElementById('punto').value;
-            const paymentMethod = document.getElementById('paymentMethod').value;
-            const notas = document.getElementById('extras').value.trim() || '';
-
-            // Validaciones
-            if (!customer || !phone || !quantity || !package || !dia || !hora || !delivery || !paymentMethod) {
-                Swal.fire('Error', 'Por favor completa todos los campos requeridos.', 'error');
-                return;
-            }
-
-            if (delivery === 'punto' && !punto) {
-                Swal.fire('Error', 'Por favor selecciona un punto de entrega.', 'error');
+            // Validar formulario
+            if (!FormValidator.validateForm()) {
                 return;
             }
 
@@ -2077,22 +2348,22 @@
 
                 // Datos del pedido
                 const pedidoData = {
-                    customer,
-                    phone,
-                    quantity: parseInt(quantity),
-                    package,
-                    liquidos: package === 'personalizado' ? ingredientesSeleccionados.liquidos : [],
-                    frutas: package === 'personalizado' ? ingredientesSeleccionados.frutas : [],
-                    toppings: package === 'personalizado' ? ingredientesSeleccionados.toppings : [],
-                    extras: package === 'personalizado' ? ingredientesSeleccionados.extras : [],
-                    delivery,
-                    punto: delivery === 'punto' ? punto : 'Palapas frente al Lobo',
-                    dia,
-                    hora,
+                    customer: document.getElementById('customer').value.trim(),
+                    phone: document.getElementById('phone').value.trim(),
+                    quantity: parseInt(document.getElementById('quantity').value),
+                    package: document.getElementById('package').value,
+                    liquidos: document.getElementById('package').value === 'personalizado' ? ingredientesSeleccionados.liquidos : [],
+                    frutas: document.getElementById('package').value === 'personalizado' ? ingredientesSeleccionados.frutas : [],
+                    toppings: document.getElementById('package').value === 'personalizado' ? ingredientesSeleccionados.toppings : [],
+                    extras: document.getElementById('package').value === 'personalizado' ? ingredientesSeleccionados.extras : [],
+                    delivery: document.getElementById('delivery').value,
+                    punto: document.getElementById('delivery').value === 'punto' ? document.getElementById('punto').value : 'Palapas frente al Lobo',
+                    dia: document.getElementById('dia').value,
+                    hora: document.getElementById('hora').value,
                     total,
-                    paymentMethod,
-                    paymentConfirmed: paymentMethod === 'efectivo',
-                    notas
+                    paymentMethod: document.getElementById('paymentMethod').value,
+                    paymentConfirmed: document.getElementById('paymentMethod').value === 'efectivo',
+                    notas: document.getElementById('extras').value.trim() || ''
                 };
 
                 console.log('📦 Enviando pedido:', pedidoData);
@@ -2115,24 +2386,28 @@
                 console.log('✅ Pedido enviado:', result);
 
                 // Mostrar éxito
-                await Swal.fire({
-                    title: '¡Pedido Enviado! 🎉',
-                    html: `
-                        <div style="text-align: left;">
-                            <strong>Recoge en:</strong> ${pedidoData.punto}<br>
-                            <strong>Fecha:</strong> ${dia} a las ${hora}<br>
-                            <strong>Total:</strong> $${total} MXN<br>
-                            <strong>Método de pago:</strong> ${paymentMethod === 'transferencia' ? 'Transferencia' : 'Efectivo'}<br>
-                            ${paymentMethod === 'transferencia' ? `
-                                <br><strong>💳 Para transferencia:</strong><br>
-                                Realiza la transferencia y envía comprobante al WhatsApp: 247 104 2170
-                            ` : '<br><strong>💰 Pago en efectivo al recoger</strong>'}
+                await FormValidator.showSweetAlert(
+                    '¡Pedido Enviado! 🎉',
+                    `<div style="text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <i class="fas fa-check-circle" style="color: #27ae60; font-size: 1.5rem;"></i>
+                            <span style="font-size: 1.2rem; font-weight: bold;">¡Tu pedido está en proceso!</span>
                         </div>
-                    `,
-                    icon: 'success',
-                    confirmButtonColor: '#7d3c98',
-                    confirmButtonText: 'Entendido'
-                });
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                            <p><strong>📦 Recoge en:</strong> ${pedidoData.punto}</p>
+                            <p><strong>📅 Fecha:</strong> ${pedidoData.dia} a las ${pedidoData.hora}</p>
+                            <p><strong>💰 Total:</strong> $${pedidoData.total} MXN</p>
+                            <p><strong>💳 Método de pago:</strong> ${pedidoData.paymentMethod === 'transferencia' ? 'Transferencia' : 'Efectivo'}</p>
+                        </div>
+                        ${pedidoData.paymentMethod === 'transferencia' ? `
+                            <div style="background: #e8f5e8; padding: 12px; border-radius: 8px; border-left: 4px solid #27ae60; margin: 10px 0;">
+                                <p><strong>💳 Para transferencia:</strong></p>
+                                <p>Realiza la transferencia y envía comprobante al WhatsApp: <strong>247 104 2170</strong></p>
+                            </div>
+                        ` : '<p style="color: #7d3c98;"><strong>💰 Pago en efectivo al recoger</strong></p>'}
+                    </div>`,
+                    'success'
+                );
 
                 // Limpiar formulario
                 document.getElementById('orderForm').reset();
@@ -2140,19 +2415,18 @@
                 document.querySelectorAll('.checkbox-item input').forEach(checkbox => checkbox.checked = false);
                 document.querySelectorAll('.payment-option, .delivery-option').forEach(opt => opt.classList.remove('selected'));
                 document.getElementById('custom-combo').classList.add('hidden');
-                document.getElementById('punto-entrega').classList.add('hidden');
+                document.getElementById('punto-entrega-group').classList.add('hidden');
                 document.getElementById('transferencia-info').classList.add('hidden');
                 document.getElementById('priceCalc').textContent = '$0 MXN';
                 document.getElementById('priceDetails').textContent = 'El precio se calculará automáticamente';
 
             } catch (error) {
                 console.error('❌ Error enviando pedido:', error);
-                Swal.fire({
-                    title: 'Error',
-                    text: 'No se pudo enviar el pedido. Por favor intenta nuevamente.',
-                    icon: 'error',
-                    confirmButtonColor: '#e74c3c'
-                });
+                FormValidator.showSweetAlert(
+                    'Error al enviar 😔',
+                    'No se pudo enviar el pedido. Por favor verifica tu conexión e intenta nuevamente.',
+                    'error'
+                );
             } finally {
                 const submitBtn = document.getElementById('submitBtn');
                 submitBtn.disabled = false;
